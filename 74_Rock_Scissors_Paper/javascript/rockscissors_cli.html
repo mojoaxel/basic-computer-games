@@ -1,0 +1,78 @@
+<html>
+<head>
+<title>ROCK, SCISSORS, PAPER</title>
+<!-- <link rel="stylesheet" href="../../00_Utilities/javascript/style_terminal.css" /> -->
+<link rel="stylesheet" href="https://unpkg.com/xterm@4.18.0/css/xterm.css" />
+<script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js" type="text/javascript"></script>
+<style>
+	html, body {
+		margin: 0;
+		padding: 0;
+		background: black;
+	}
+</style>
+</head>
+<body>
+<div id="terminal"></div>
+<script>
+	$terminal = document.getElementById('terminal');
+	var term = new Terminal({
+		cursorBlink: true
+	});
+	term.open($terminal);
+	
+	term.prompt = function () {
+		term.write( '? ');
+	};
+
+	window.process = {
+		stdout: {
+			write: (t) => term.write(t)
+		},
+		exit: (code) => {},
+	}
+	window.console = {
+		...console,
+		log: (t) => term.writeln(t)
+	}
+
+	const readlineDummy = {
+		createInterface: () => ({
+			question: (message, callback) => {
+				term.write(message);
+				term.prompt();
+
+				let cmd = "";
+				const keyHandler = term.onKey(({key, domEvent}) => {
+					var printable = (
+						!domEvent.altKey && !domEvent.altGraphKey && !domEvent.ctrlKey && !domEvent.metaKey
+					);
+
+					if (domEvent.keyCode == 13) {
+						term.writeln('');
+						callback(cmd);
+						cmd = "";
+						keyHandler.dispose();
+					} else if (domEvent.keyCode == 8) {
+						// Do not delete the prompt
+						if (term.x > 2) {
+							term.write('\b \b');
+						}
+					} else if (printable) {
+						term.write(key);
+						cmd += key;
+					}
+				});
+			}
+		})
+	}
+
+	window.require = (lib) => {
+		switch (lib) {
+			case 'readline': return readlineDummy;
+		}
+	}
+</script>
+<script src="rockscissors_cli.js"  type="text/javascript" defer></script>
+</body>
+</html>
